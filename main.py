@@ -2,7 +2,7 @@ from random import random, randrange, choice, choices
 
 import numpy
 
-from  creature import creature
+from creature import creature
 
 def initCreatures(numOfCreature,percentageOfSick,percentageOfHyper):
     sim_map = {}
@@ -91,7 +91,7 @@ def simMoveStep(halfNewSimMap):
             elif newMap[(firstTuple, secondTuple)].infected <= 0:
                 regularCreaturesSet.add((firstTuple, secondTuple))
             oldMap.pop(chosenCreature)
-    return newMap
+    return newMap,regularCreaturesSet,infectedSet
 
 def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenToRecovery,probOfInfectOne,probOfInfectTwo,treshhold):
     oldSimMap = {}
@@ -103,23 +103,14 @@ def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenTo
     for i in range(100):
         halfNewSimMap = oldSimMap.copy()
         simKeys = oldSimMap.keys()
-        halfNewSimMap = simInfected(oldSimMap,simKeys,probOfInfectOne)
+        if len(infectedSet) < treshhold*numOfCreature:
+            halfNewSimMap = simInfected(oldSimMap,simKeys,probOfInfectOne)
+        else:
+            halfNewSimMap = simInfected(oldSimMap,simKeys,probOfInfectTwo)
         halfNewSimMap = simNextGeneration(oldSimMap,halfNewSimMap,numOfGenToRecovery)
-        newList = simMoveStep(halfNewSimMap)
+        newList, regularCreaturesSet, infectedSet = simMoveStep(halfNewSimMap)
         #showList
         oldSimMap = newList.copy()
-        """
-        for key in simKeys:
-            if oldSimMap[key].infected > 0:
-                j = -1
-                t = -1
-                for j in range(-1,2):
-                    for t in range(-1,2):
-                        if ((key[0]+j) % 200 , (key[1]+t) % 200) in oldSimMap.keys() and (j != 0 or t !=0):
-                           if choices(isSickList, weights=( 1 - probOfInfectOne,probOfInfectOne), k=1)[0] == 1 and halfNewSimMap[(key[0]+j) % 200 , (key[1]+t)].infected == 0:
-                               bla =  halfNewSimMap[(key[0]+j) % 200 , (key[1]+t)]
-                               halfNewSimMap[(key[0]+j) % 200 , (key[1]+t)].infected = 1
-        """
         #print(choices(isSickList,weights=(probOfInfectOne,1-probOfInfectOne),k=1))
 
 def main():
@@ -127,9 +118,9 @@ def main():
     percentageOfSick = 0.1
     percentageOfHyper = 0.1
     NumOfGenToRecovery = 10
-    probOfInfectOne = 0.5
+    probOfInfectOne = 0.3
     probOfInfectTwo = 0.1
-    treshhold =0.1
+    treshhold =0.12
     coronaSimulation(numOfCreatures,percentageOfSick,percentageOfHyper,NumOfGenToRecovery,probOfInfectOne,probOfInfectTwo,treshhold)
 
 
