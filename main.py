@@ -1,10 +1,17 @@
 from random import randrange, choice, choices
 
-import numpy as np
-from matplotlib import pyplot as plt
+from tkinter import Canvas, Tk, NW
 
+import numpy as np
+from PIL import Image, ImageTk
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+
+
+master = Tk()
 from creature import creature
 import random
+import time
 
 regularCreaturesSet = set()
 infectedSet = set()
@@ -21,7 +28,6 @@ def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
     while i < numOfCreature:
         if i < numOfSick:
             newPoint = (randrange(size), randrange(size))
-            #newPoint = (100, 100)
             if newPoint in sim_map.keys():
                continue
             else:
@@ -29,7 +35,6 @@ def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
                infectedSet.add(newPoint)
         else:
             newPoint = (randrange(size), randrange(size))
-            #newPoint = (100, 100)
             if newPoint in sim_map.keys():
                continue
             else:
@@ -44,23 +49,46 @@ def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
         sim_map[hyperCreature].hyper = True
         sim_map_clone.pop(hyperCreature)
     return sim_map
-
-def simInfected(oldSimMap, simKeys, probOfInfect):
+#
+# def simInfected(oldSimMap, simKeys, probOfInfect):
+#     halfNewSimMap = oldSimMap.copy()
+#     isSickList = [0, 1]
+#     for key in simKeys:
+#         if oldSimMap[key].infected > 0:
+#             for x_step in range(-1, 2):
+#                 for y_step in range(-1, 2):
+#                     if x_step == 0 and y_step == 0:
+#                         continue
+#                     neighbor_to_check = (key[0] + x_step) % 200, (key[1] + y_step) % 200
+#                     if neighbor_to_check in oldSimMap.keys():
+#                         if choices(isSickList, weights=(1 - probOfInfect, probOfInfect), k=1)[0] == 1 and \
+#                                 halfNewSimMap[neighbor_to_check].infected == 0:
+#                             halfNewSimMap[neighbor_to_check].infected = 1
+#                             if neighbor_to_check not in regularCreaturesSet:
+#                                 x = 3
+#                             regularCreaturesSet.remove(neighbor_to_check)
+#                             infectedSet.add(neighbor_to_check)
+#
+#
+#     return halfNewSimMap
+def simInfected(oldSimMap, probOfInfect):
     halfNewSimMap = oldSimMap.copy()
     isSickList = [0, 1]
-    for key in simKeys:
-        if oldSimMap[key].infected > 0:
-            for x_step in range(-1, 2):
-                for y_step in range(-1, 2):
-                    if x_step == 0 and y_step == 0:
-                        continue
-                    neighbor_to_check = (key[0] + x_step) % 200, (key[1] + y_step) % 200
-                    if neighbor_to_check in oldSimMap.keys():
-                        if choices(isSickList, weights=(1 - probOfInfect, probOfInfect), k=1)[0] == 1 and \
-                                halfNewSimMap[neighbor_to_check].infected == 0:
-                            halfNewSimMap[neighbor_to_check].infected = 1
-                            regularCreaturesSet.remove(neighbor_to_check)
-                            infectedSet.add(neighbor_to_check)
+    infectedSetCopy = infectedSet.copy()
+    for key in infectedSetCopy:
+        for x_step in range(-1, 2):
+            for y_step in range(-1, 2):
+                if x_step == 0 and y_step == 0:
+                    continue
+                neighbor_to_check = (key[0] + x_step) % 200, (key[1] + y_step) % 200
+                if neighbor_to_check in regularCreaturesSet:
+                    if choices(isSickList, weights=(1 - probOfInfect, probOfInfect), k=1)[0] == 1:
+                        if neighbor_to_check not in halfNewSimMap:
+                            x = 3
+                        halfNewSimMap[neighbor_to_check].infected = 1
+                        regularCreaturesSet.remove(neighbor_to_check)
+                        print("remove" + str(neighbor_to_check))
+                        infectedSet.add(neighbor_to_check)
 
 
     return halfNewSimMap
@@ -89,21 +117,22 @@ def get_new_point(creature_point, is_hyper):
 def simMoveStep(halfNewSimMap):
     oldMap = halfNewSimMap.copy()
     newMap = {}
-    # infectedSet.clear()
-    # regularCreaturesSet.clear()
-    # recoverSet.clear()
-    for creature_point in oldMap.keys():
+    while len(oldMap.keys()) > 0:
+        creature_point = oldMap.popitem()
+        new_point = get_new_point(creature_point[0], creature_point[1].hyper)
+        while new_point in newMap.keys() or new_point in oldMap.keys():
+            new_point = get_new_point(creature_point[0], creature_point[1].hyper)
 
-        new_point = get_new_point(creature_point, oldMap[creature_point].hyper)
-        while new_point not in newMap.keys() and new_point not in oldMap.keys():
-            new_point = get_new_point(creature_point, oldMap[creature_point].hyper)
-
-        newMap[new_point] = oldMap[creature_point]
-        if newMap[new_point].infected > 0:
-            infectedSet.add(new_point)
-        elif newMap[new_point].infected == 0:
+        newMap[new_point] = creature_point[1]
+        if creature_point[0] in regularCreaturesSet:
+            regularCreaturesSet.remove(creature_point[0])
             regularCreaturesSet.add(new_point)
-        elif newMap[new_point].infected < 0:
+        elif creature_point[0] in infectedSet:
+            infectedSet.remove(creature_point[0])
+            infectedSet.add(new_point)
+
+        elif creature_point[0] in recoverSet:
+            recoverSet.remove(creature_point[0])
             recoverSet.add(new_point)
     return newMap
 
@@ -136,38 +165,69 @@ def simMoveStep(halfNewSimMap):
 def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenToRecovery,probOfInfectHigh,probOfInfectLow,treshhold):
     oldSimMap = initCreatures(numOfCreature, percentageOfSick, percentageOfHyper)
     #show simulation
-    for i in range(100):
+    nrows = 800
+    ncols = 800
+
+
+    win = Tk()
+    win.geometry("750x250")
+
+    w = Canvas(master, width=1000, height=800, bg="white")
+    plt.title("Matplotlib pcolormesh")
+    for i in range(1000):
+        print(i)
         list_of_counts.append((i, len(regularCreaturesSet), len(infectedSet), len(recoverSet)))
-        halfNewSimMap = oldSimMap.copy()
-        simKeys = oldSimMap.keys()
+        map_after_infected_update = {}
         if len(infectedSet) < treshhold*numOfCreature:
-            simInfected(oldSimMap, simKeys, probOfInfectHigh)
+            map_after_infected_update = simInfected(oldSimMap, probOfInfectHigh)
         else:
-            simInfected(oldSimMap, simKeys, probOfInfectLow)
-        halfNewSimMap = simNextGeneration(oldSimMap, halfNewSimMap, numOfGenToRecovery)
-        newList = simMoveStep(halfNewSimMap)
-        #showList
-        oldSimMap = newList.copy()
+            map_after_infected_update = simInfected(oldSimMap, probOfInfectLow)
+        map_status_next_gen = simNextGeneration(oldSimMap, map_after_infected_update, numOfGenToRecovery)
+        oldSimMap = simMoveStep(map_status_next_gen).copy()
+        Z = np.zeros([nrows, ncols])
+        show_board(Z, w, win)
+        time.sleep(0.01)
         #print(choices(isSickList,weights=(probOfInfectOne,1-probOfInfectOne),k=1))
 
 def main():
-    numOfCreatures = 16000
-    percentageOfSick = 0.1
-    percentageOfHyper = 0.3
+    numOfCreatures = 10000
+    percentageOfSick = 0.0001
+    percentageOfHyper = 0.2
     NumOfGenToRecovery = 10
-    probOfInfectHigh = 0.6
-    probOfInfectLow = 0.2
-    threshold = 0.4
-    show_board()
+    probOfInfectHigh = 0.1
+    probOfInfectLow = 0.05
+    threshold = 0.5
     coronaSimulation(numOfCreatures, percentageOfSick, percentageOfHyper, NumOfGenToRecovery, probOfInfectHigh, probOfInfectLow, threshold)
-    x = 3
 
-def show_board():
-    board = np.zeros((200, 200))
-    board[0, 0] = 0.5
-    plt.imshow(board)
-    plt.show()
-    x = 3
+def get_wide_pixels(Z, x, y, color, size):
+
+    start = x * size
+    end = y * size
+    for i in range(start, start + size):
+        for j in range(end, end + size):
+            Z[i][j] = color
+
+def show_board(Z, w , win):
+
+
+    for regular in regularCreaturesSet:
+        get_wide_pixels(Z, regular[0], regular[1], 0.3, 4)
+
+    for sick in infectedSet:
+        get_wide_pixels(Z, sick[0], sick[1], 0.7, 4)
+
+    for recover in recoverSet:
+        get_wide_pixels(Z, recover[0], recover[1], 0.45, 4)
+
+
+    w.pack()
+
+    plt.imsave('check.png', Z, cmap="jet")
+    img = ImageTk.PhotoImage(Image.open('check.png'))
+    w.create_image(20, 20, anchor=NW, image=img)
+    win.update_idletasks()
+    win.update()
+
 if __name__ == '__main__':
     main()
 
