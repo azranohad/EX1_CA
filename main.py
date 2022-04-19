@@ -5,7 +5,7 @@ from tkinter import *
 
 import numpy as np
 from PIL import Image, ImageTk
-from matplotlib import pyplot as plt, cm
+from matplotlib import pyplot as plt, cm, colors
 from matplotlib.colors import ListedColormap
 
 master = Tk()
@@ -17,6 +17,10 @@ regularCreaturesSet = set()
 infectedSet = set()
 recoverSet = set()
 list_of_counts = []
+
+c_map_rec_empty = colors.ListedColormap(['#ffffff', '#0515f2', '#f20505'])
+c_map_stn = colors.ListedColormap(['#ffffff', '#0515f2', '#f20505', '#e4f002'])
+
 
 hsv_modified = cm.get_cmap('hsv', 256)# create new hsv colormaps in range of 0.3 (green) to 0.7 (blue)
 newcmp = ListedColormap(hsv_modified(np.linspace(0, 1, 256)))# show figure
@@ -194,7 +198,7 @@ def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenTo
         #print(choices(isSickList,weights=(probOfInfectOne,1-probOfInfectOne),k=1))
 
 def get_parameters():
-    num = e1.get()
+    # num = e1.get()
     numOfCreatures = 10000
     percentageOfSick = 0.0001
     percentageOfHyper = 0.2
@@ -217,17 +221,20 @@ def get_wide_pixels(Z, x, y, color, size):
 def show_board(Z, w, win):
 
     for regular in regularCreaturesSet:
-        get_wide_pixels(Z, regular[0], regular[1], 0.5, 4)
+        get_wide_pixels(Z, regular[0], regular[1], 1, 4)
 
     for sick in infectedSet:
-        get_wide_pixels(Z, sick[0], sick[1], 0.8, 4)
+        get_wide_pixels(Z, sick[0], sick[1], 2, 4)
 
     for recover in recoverSet:
-        get_wide_pixels(Z, recover[0], recover[1], 0.4, 4)
+        get_wide_pixels(Z, recover[0], recover[1], 3, 4)
 
     w.pack()
+    if len(recoverSet) == 0:
+        plt.imsave('check.png', Z, cmap=c_map_rec_empty)
+    else:
+        plt.imsave('check.png', Z, cmap=c_map_stn)
 
-    plt.imsave('check.png', Z, cmap=newcmp)
     img = ImageTk.PhotoImage(Image.open('check.png'))
     w.create_image(20, 20, anchor=NW, image=img)
     win.update_idletasks()
@@ -246,7 +253,7 @@ def show_board(Z, w, win):
 # parent.mainloop()
 
 numOfCreatures = 10000
-percentageOfSick = 0.0001
+percentageOfSick = 0.01
 percentageOfHyper = 0.2
 NumOfGenToRecovery = 10
 probOfInfectHigh = 0.1
