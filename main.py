@@ -1,12 +1,12 @@
 from random import randrange, choice, choices
 
-from tkinter import Canvas, Tk, NW
+from tkinter import Canvas, Tk, NW, ttk
+from tkinter import *
 
 import numpy as np
 from PIL import Image, ImageTk
-from matplotlib import pyplot as plt
-import matplotlib.image as mpimg
-
+from matplotlib import pyplot as plt, cm
+from matplotlib.colors import ListedColormap
 
 master = Tk()
 from creature import creature
@@ -18,6 +18,8 @@ infectedSet = set()
 recoverSet = set()
 list_of_counts = []
 
+hsv_modified = cm.get_cmap('hsv', 256)# create new hsv colormaps in range of 0.3 (green) to 0.7 (blue)
+newcmp = ListedColormap(hsv_modified(np.linspace(0, 1, 256)))# show figure
 
 def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
     sim_map = {}
@@ -162,6 +164,8 @@ def simMoveStep(halfNewSimMap):
 #             oldMap.pop(chosenCreature)
 #     return newMap, regularCreaturesSet, infectedSet
 
+
+
 def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenToRecovery,probOfInfectHigh,probOfInfectLow,treshhold):
     oldSimMap = initCreatures(numOfCreature, percentageOfSick, percentageOfHyper)
     #show simulation
@@ -169,11 +173,11 @@ def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenTo
     ncols = 800
 
 
-    win = Tk()
-    win.geometry("750x250")
 
+    win = Tk()
     w = Canvas(master, width=1000, height=800, bg="white")
     plt.title("Matplotlib pcolormesh")
+
     for i in range(1000):
         print(i)
         list_of_counts.append((i, len(regularCreaturesSet), len(infectedSet), len(recoverSet)))
@@ -189,7 +193,8 @@ def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenTo
         time.sleep(0.01)
         #print(choices(isSickList,weights=(probOfInfectOne,1-probOfInfectOne),k=1))
 
-def main():
+def get_parameters():
+    num = e1.get()
     numOfCreatures = 10000
     percentageOfSick = 0.0001
     percentageOfHyper = 0.2
@@ -199,6 +204,8 @@ def main():
     threshold = 0.5
     coronaSimulation(numOfCreatures, percentageOfSick, percentageOfHyper, NumOfGenToRecovery, probOfInfectHigh, probOfInfectLow, threshold)
 
+
+
 def get_wide_pixels(Z, x, y, color, size):
 
     start = x * size
@@ -207,27 +214,43 @@ def get_wide_pixels(Z, x, y, color, size):
         for j in range(end, end + size):
             Z[i][j] = color
 
-def show_board(Z, w , win):
-
+def show_board(Z, w, win):
 
     for regular in regularCreaturesSet:
-        get_wide_pixels(Z, regular[0], regular[1], 0.3, 4)
+        get_wide_pixels(Z, regular[0], regular[1], 0.5, 4)
 
     for sick in infectedSet:
-        get_wide_pixels(Z, sick[0], sick[1], 0.7, 4)
+        get_wide_pixels(Z, sick[0], sick[1], 0.8, 4)
 
     for recover in recoverSet:
-        get_wide_pixels(Z, recover[0], recover[1], 0.45, 4)
-
+        get_wide_pixels(Z, recover[0], recover[1], 0.4, 4)
 
     w.pack()
 
-    plt.imsave('check.png', Z, cmap="jet")
+    plt.imsave('check.png', Z, cmap=newcmp)
     img = ImageTk.PhotoImage(Image.open('check.png'))
     w.create_image(20, 20, anchor=NW, image=img)
     win.update_idletasks()
     win.update()
 
-if __name__ == '__main__':
-    main()
+# parent = Tk()
+# parent.geometry("300x400")
+# user_input = StringVar(parent)
+# name = Label(parent, text="Name").grid(row=0, column=0)
+# e1 = Entry(parent)
+# e1.grid(row=0, column=1)
+# password = Label(parent, text="Password").grid(row=1, column=0)
+# e2 = Entry(parent, textvariable=user_input)
+# e2.grid(row=1, column=1)
+# submit = Button(parent, text="Submit", command=get_parameters).grid(row=4, column=0)
+# parent.mainloop()
 
+numOfCreatures = 10000
+percentageOfSick = 0.0001
+percentageOfHyper = 0.2
+NumOfGenToRecovery = 10
+probOfInfectHigh = 0.1
+probOfInfectLow = 0.05
+threshold = 0.5
+coronaSimulation(numOfCreatures, percentageOfSick, percentageOfHyper, NumOfGenToRecovery, probOfInfectHigh,
+                 probOfInfectLow, threshold)
