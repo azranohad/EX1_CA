@@ -1,22 +1,18 @@
+import time
 from random import randrange, choice, choices
 
-from tkinter import Canvas, Tk, NW, ttk
 from tkinter import *
-
 import numpy as np
 from PIL import Image, ImageTk
 from matplotlib import pyplot as plt, cm, colors
 from matplotlib.colors import ListedColormap
-
-master = Tk()
 from creature import creature
 import random
-import time
 
+master = Tk()
 regularCreaturesSet = set()
 infectedSet = set()
 recoverSet = set()
-list_of_counts = []
 
 c_map_rec_empty = colors.ListedColormap(['#ffffff', '#0515f2', '#f20505'])
 c_map_stn = colors.ListedColormap(['#ffffff', '#0515f2', '#f20505', '#e4f002'])
@@ -55,28 +51,7 @@ def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
         sim_map[hyperCreature].hyper = True
         sim_map_clone.pop(hyperCreature)
     return sim_map
-#
-# def simInfected(oldSimMap, simKeys, probOfInfect):
-#     halfNewSimMap = oldSimMap.copy()
-#     isSickList = [0, 1]
-#     for key in simKeys:
-#         if oldSimMap[key].infected > 0:
-#             for x_step in range(-1, 2):
-#                 for y_step in range(-1, 2):
-#                     if x_step == 0 and y_step == 0:
-#                         continue
-#                     neighbor_to_check = (key[0] + x_step) % 200, (key[1] + y_step) % 200
-#                     if neighbor_to_check in oldSimMap.keys():
-#                         if choices(isSickList, weights=(1 - probOfInfect, probOfInfect), k=1)[0] == 1 and \
-#                                 halfNewSimMap[neighbor_to_check].infected == 0:
-#                             halfNewSimMap[neighbor_to_check].infected = 1
-#                             if neighbor_to_check not in regularCreaturesSet:
-#                                 x = 3
-#                             regularCreaturesSet.remove(neighbor_to_check)
-#                             infectedSet.add(neighbor_to_check)
-#
-#
-#     return halfNewSimMap
+
 def simInfected(oldSimMap, probOfInfect):
     halfNewSimMap = oldSimMap.copy()
     isSickList = [0, 1]
@@ -93,7 +68,6 @@ def simInfected(oldSimMap, probOfInfect):
                             x = 3
                         halfNewSimMap[neighbor_to_check].infected = 1
                         regularCreaturesSet.remove(neighbor_to_check)
-                        print("remove" + str(neighbor_to_check))
                         infectedSet.add(neighbor_to_check)
 
 
@@ -142,73 +116,29 @@ def simMoveStep(halfNewSimMap):
             recoverSet.add(new_point)
     return newMap
 
-# def simMoveStep(halfNewSimMap):
-#     oldMap = halfNewSimMap.copy()
-#     simKeys = halfNewSimMap.keys()
-#
-#     newMap = {}
-#     movesList = [-1,0,1]
-#     hyperMovesList = [-5,-4,-3,-2,-1,0,1,2,3,4,5]
-#
-#     while oldMap:
-#         chosenCreature = choice(list(oldMap.keys()))
-#         if oldMap[chosenCreature].hyper == False:
-#             choiceList = choices(movesList, k=2)
-#         else:
-#             choiceList = choices(hyperMovesList, k=2)
-#
-#         firstTuple = (chosenCreature[0] + choiceList[0]) % 200
-#         secondTuple = (chosenCreature[1] + choiceList[1]) % 200
-#         if (firstTuple, secondTuple) not in newMap:
-#             newMap[(firstTuple, secondTuple)] = oldMap[chosenCreature]
-#             if newMap[(firstTuple, secondTuple)].infected > 0:
-#                 infectedSet.add((firstTuple, secondTuple))
-#             elif newMap[(firstTuple, secondTuple)].infected <= 0:
-#                 regularCreaturesSet.add((firstTuple, secondTuple))
-#             oldMap.pop(chosenCreature)
-#     return newMap, regularCreaturesSet, infectedSet
 
-
-
-def coronaSimulation(numOfCreature,percentageOfSick,percentageOfHyper,numOfGenToRecovery,probOfInfectHigh,probOfInfectLow,treshhold):
-    oldSimMap = initCreatures(numOfCreature, percentageOfSick, percentageOfHyper)
-    #show simulation
+def coronaSimulation(numOfCreatures,percentageOfSick,percentageOfHyper,numOfGenToRecovery,probOfInfectHigh,probOfInfectLow,treshhold):
+    oldSimMap = initCreatures(numOfCreatures, percentageOfSick, percentageOfHyper)
     nrows = 800
     ncols = 800
+    insulation = 0
 
-
-
-    win = Tk()
-    w = Canvas(master, width=1000, height=800, bg="white")
-    plt.title("Matplotlib pcolormesh")
-
-    for i in range(1000):
-        print(i)
-        list_of_counts.append((i, len(regularCreaturesSet), len(infectedSet), len(recoverSet)))
+    for i in range(10000):
+        if len(infectedSet) == 0:
+            break
         map_after_infected_update = {}
-        if len(infectedSet) < treshhold*numOfCreature:
-            map_after_infected_update = simInfected(oldSimMap, probOfInfectHigh)
-        else:
+        if len(infectedSet) > treshhold*numOfCreatures:
+            insulation = numOfGenToRecovery*0.4
+        if insulation > 0:
             map_after_infected_update = simInfected(oldSimMap, probOfInfectLow)
+            insulation -= 1
+        else:
+            map_after_infected_update = simInfected(oldSimMap, probOfInfectHigh)
         map_status_next_gen = simNextGeneration(oldSimMap, map_after_infected_update, numOfGenToRecovery)
         oldSimMap = simMoveStep(map_status_next_gen).copy()
         Z = np.zeros([nrows, ncols])
-        show_board(Z, w, win)
-        time.sleep(0.01)
-        #print(choices(isSickList,weights=(probOfInfectOne,1-probOfInfectOne),k=1))
-
-def get_parameters():
-    # num = e1.get()
-    numOfCreatures = 10000
-    percentageOfSick = 0.0001
-    percentageOfHyper = 0.2
-    NumOfGenToRecovery = 10
-    probOfInfectHigh = 0.1
-    probOfInfectLow = 0.05
-    threshold = 0.5
-    coronaSimulation(numOfCreatures, percentageOfSick, percentageOfHyper, NumOfGenToRecovery, probOfInfectHigh, probOfInfectLow, threshold)
-
-
+        show_board(Z)
+        time.sleep(0.02)
 
 def get_wide_pixels(Z, x, y, color, size):
 
@@ -218,7 +148,7 @@ def get_wide_pixels(Z, x, y, color, size):
         for j in range(end, end + size):
             Z[i][j] = color
 
-def show_board(Z, w, win):
+def show_board(Z):
 
     for regular in regularCreaturesSet:
         get_wide_pixels(Z, regular[0], regular[1], 1, 4)
@@ -240,24 +170,38 @@ def show_board(Z, w, win):
     win.update_idletasks()
     win.update()
 
-# parent = Tk()
-# parent.geometry("300x400")
-# user_input = StringVar(parent)
-# name = Label(parent, text="Name").grid(row=0, column=0)
-# e1 = Entry(parent)
-# e1.grid(row=0, column=1)
-# password = Label(parent, text="Password").grid(row=1, column=0)
-# e2 = Entry(parent, textvariable=user_input)
-# e2.grid(row=1, column=1)
-# submit = Button(parent, text="Submit", command=get_parameters).grid(row=4, column=0)
-# parent.mainloop()
 
-numOfCreatures = 10000
-percentageOfSick = 0.01
-percentageOfHyper = 0.2
-NumOfGenToRecovery = 10
-probOfInfectHigh = 0.1
-probOfInfectLow = 0.05
-threshold = 0.5
-coronaSimulation(numOfCreatures, percentageOfSick, percentageOfHyper, NumOfGenToRecovery, probOfInfectHigh,
-                 probOfInfectLow, threshold)
+parent = Tk()
+parent.geometry("350x200")
+user_input = StringVar(parent)
+numOfCreaturesLabel = Label(parent, text="Number Of Creatures").grid(row=0, column=0)
+
+numOfCreatures = Entry(parent)
+numOfCreatures.grid(row=0, column=1)
+percentageOfSickLabel = Label(parent, text="Percentage Of Sick").grid(row=1, column=0)
+percentageOfSick = Entry(parent)
+percentageOfSick.grid(row=1, column=1)
+percentageOfHyperLabel = Label(parent, text="Percentage Of Hyper").grid(row=2, column=0)
+percentageOfHyper = Entry(parent)
+percentageOfHyper.grid(row=2, column=1)
+NumOfGenToRecoveryLabel = Label(parent, text="Number Of Generation To Recovery").grid(row=3, column=0)
+NumOfGenToRecovery = Entry(parent)
+NumOfGenToRecovery.grid(row=3, column=1)
+probOfInfectHighLabel = Label(parent, text="probability Of Infect High").grid(row=4, column=0)
+probOfInfectHigh = Entry(parent)
+probOfInfectHigh.grid(row=4, column=1)
+probOfInfectLowLabel = Label(parent, text="probability Of Infect Low").grid(row=5, column=0)
+probOfInfectLow = Entry(parent)
+probOfInfectLow.grid(row=5, column=1)
+thresholdLabel = Label(parent, text="threshold").grid(row=6, column=0)
+threshold = Entry(parent)
+threshold.grid(row=6, column=1)
+submit = Button(parent, text="Submit", command=lambda:[parent.quit()]).grid(row=7, column=0)
+
+parent.mainloop()
+win = Tk()
+w = Canvas(master, width=1000, height=800, bg="white")
+coronaSimulation(int(numOfCreatures.get()), float(percentageOfSick.get()),float(percentageOfHyper.get()),int(NumOfGenToRecovery.get()),
+                 float(probOfInfectHigh.get()),float(probOfInfectLow.get()),float(threshold.get()))
+
+
