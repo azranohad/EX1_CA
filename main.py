@@ -1,3 +1,4 @@
+import os
 import time
 from random import randrange, choice, choices
 
@@ -139,6 +140,7 @@ def coronaSimulation(numOfCreatures,percentageOfSick,percentageOfHyper,numOfGenT
         Z = np.zeros([nrows, ncols])
         show_board(Z)
         time.sleep(0.02)
+    os.remove('check.png')
 
 def get_wide_pixels(Z, x, y, color, size):
 
