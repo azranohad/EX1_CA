@@ -123,8 +123,11 @@ def coronaSimulation(numOfCreatures,percentageOfSick,percentageOfHyper,numOfGenT
     nrows = 800
     ncols = 800
     insulation = 0
-
+    list_of_time = []
+    list_of_infected = []
     for i in range(10000):
+        list_of_time.append(i)
+        list_of_infected.append(len(infectedSet))
         if len(infectedSet) == 0:
             break
         map_after_infected_update = {}
@@ -140,6 +143,10 @@ def coronaSimulation(numOfCreatures,percentageOfSick,percentageOfHyper,numOfGenT
         Z = np.zeros([nrows, ncols])
         show_board(Z)
         time.sleep(0.02)
+    plt.plot(list_of_time, list_of_infected)
+    plt.ylabel('Number Of Infected')
+    plt.xlabel('Generation Number')
+    plt.show()
     os.remove('check.png')
 
 def get_wide_pixels(Z, x, y, color, size):
@@ -177,26 +184,32 @@ parent = Tk()
 parent.geometry("350x200")
 user_input = StringVar(parent)
 numOfCreaturesLabel = Label(parent, text="Number Of Creatures").grid(row=0, column=0)
-
 numOfCreatures = Entry(parent)
+numOfCreatures.insert(END, 4000)
 numOfCreatures.grid(row=0, column=1)
 percentageOfSickLabel = Label(parent, text="Percentage Of Sick").grid(row=1, column=0)
 percentageOfSick = Entry(parent)
+percentageOfSick.insert(END, 0.05)
 percentageOfSick.grid(row=1, column=1)
 percentageOfHyperLabel = Label(parent, text="Percentage Of Hyper").grid(row=2, column=0)
 percentageOfHyper = Entry(parent)
+percentageOfHyper.insert(END, 0.6)
 percentageOfHyper.grid(row=2, column=1)
 NumOfGenToRecoveryLabel = Label(parent, text="Number Of Generation To Recovery").grid(row=3, column=0)
 NumOfGenToRecovery = Entry(parent)
+NumOfGenToRecovery.insert(END, 13)
 NumOfGenToRecovery.grid(row=3, column=1)
 probOfInfectHighLabel = Label(parent, text="probability Of Infect High").grid(row=4, column=0)
 probOfInfectHigh = Entry(parent)
+probOfInfectHigh.insert(END, 0.9)
 probOfInfectHigh.grid(row=4, column=1)
 probOfInfectLowLabel = Label(parent, text="probability Of Infect Low").grid(row=5, column=0)
 probOfInfectLow = Entry(parent)
+probOfInfectLow.insert(END, 0.03)
 probOfInfectLow.grid(row=5, column=1)
 thresholdLabel = Label(parent, text="threshold").grid(row=6, column=0)
 threshold = Entry(parent)
+threshold.insert(END, 0.05)
 threshold.grid(row=6, column=1)
 submit = Button(parent, text="Submit", command=lambda:[parent.quit()]).grid(row=7, column=0)
 
