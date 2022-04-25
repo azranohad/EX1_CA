@@ -28,6 +28,7 @@ def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
     numOfSick = int(numOfCreature*percentageOfSick)
     numOfHyper = int(numOfCreature*percentageOfHyper)
     i = 0
+    # create N creature
     while i < numOfCreature:
         if i < numOfSick:
             newPoint = (randrange(size), randrange(size))
@@ -47,12 +48,14 @@ def initCreatures(numOfCreature, percentageOfSick, percentageOfHyper):
         i = i+1
 
     sim_map_clone = sim_map.copy()
+    # create R hyper creature
     for j in range(numOfHyper):
         hyperCreature = choice(list(sim_map_clone.keys()))
         sim_map[hyperCreature].hyper = True
         sim_map_clone.pop(hyperCreature)
     return sim_map
 
+# infected after move creature, each generation
 def simInfected(oldSimMap, probOfInfect):
     halfNewSimMap = oldSimMap.copy()
     isSickList = [0, 1]
@@ -65,15 +68,13 @@ def simInfected(oldSimMap, probOfInfect):
                 neighbor_to_check = (key[0] + x_step) % 200, (key[1] + y_step) % 200
                 if neighbor_to_check in regularCreaturesSet:
                     if choices(isSickList, weights=(1 - probOfInfect, probOfInfect), k=1)[0] == 1:
-                        if neighbor_to_check not in halfNewSimMap:
-                            x = 3
                         halfNewSimMap[neighbor_to_check].infected = 1
                         regularCreaturesSet.remove(neighbor_to_check)
                         infectedSet.add(neighbor_to_check)
 
-
     return halfNewSimMap
 
+#calc new flag each creature after move
 def simNextGeneration(oldSimMap, halfNewSimMap, numOfGenToRecovery):
     newSimMap = halfNewSimMap.copy()
     simKeys = halfNewSimMap.keys()
@@ -86,7 +87,7 @@ def simNextGeneration(oldSimMap, halfNewSimMap, numOfGenToRecovery):
             recoverSet.add(key)
     return newSimMap
 
-
+# get new position for each creature
 def get_new_point(creature_point, is_hyper):
     move_step = tuple()
     if not is_hyper:
@@ -95,6 +96,7 @@ def get_new_point(creature_point, is_hyper):
         move_step = (random.randint(-10, 10), random.randint(-10, 10))
     return (creature_point[0] + move_step[0]) % 200, (creature_point[1] + move_step[1]) % 200
 
+#
 def simMoveStep(halfNewSimMap):
     oldMap = halfNewSimMap.copy()
     newMap = {}
